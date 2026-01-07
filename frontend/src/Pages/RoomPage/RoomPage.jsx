@@ -12,11 +12,14 @@ import { Error } from '../../components/Error';
 
 export const RoomPage = () => {
   const { roomId } = useParams();
-  const { sendMessage, socket } = useContext(RoomsContext);
+  const { sendMessage, socket, rooms } = useContext(RoomsContext);
   const [messages, setMessages] = useState([]);
   const { user } = useContext(UserContext);
   const [error, setError] = useState('');
   const [isErrorMessageOpen, setErrorMessageOpen] = useState(false);
+  const [membersCount, setMembersCount] = useState(0);
+
+  const currentRoom = rooms.find((room) => room.id === roomId);
 
   useEffect(() => {
     if (!socket) {
@@ -46,6 +49,12 @@ export const RoomPage = () => {
         }
       }
 
+      if (type === 'MEMBERS_COUNT') {
+        if (String(payload.roomId) === String(roomId)) {
+          setMembersCount(payload.count);
+        }
+      }
+
       if (type === 'ERROR') {
         setError(payload.message);
         setErrorMessageOpen(true);
@@ -61,7 +70,11 @@ export const RoomPage = () => {
 
   return (
     <div className={styles.roomPage}>
-      <Header />
+      <Header
+        membersCount={membersCount}
+        currentRoom={currentRoom}
+        roomId={roomId}
+      />
       <Chat user={user} roomId={roomId} messages={messages} />
       <Composer roomId={roomId} user={user} />
       <Error

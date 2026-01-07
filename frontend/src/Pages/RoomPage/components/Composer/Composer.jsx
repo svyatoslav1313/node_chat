@@ -18,14 +18,25 @@ export const Composer = ({ roomId, user }) => {
     setMessage('');
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+
+      if (message.trim().length > 0) {
+        handleSend(e);
+      }
+    }
+  };
+
   return (
     <div className={styles.composer}>
-      <form className={styles.form} onClick={handleSend}>
+      <form className={styles.form} onSubmit={handleSend}>
         <textarea
           value={message}
           className={styles.textarea}
           placeholder="Type message"
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
         ></textarea>
         <button
           className={styles.button}

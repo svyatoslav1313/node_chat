@@ -1,24 +1,53 @@
 import { Message } from '../models/Message.js';
 import { WebSocket } from 'ws';
 
+export const chatMembersCount = (wss, roomId) => {
+  if (!roomId) {
+    return;
+  }
+
+  let count = 0;
+
+  wss.clients.forEach((client) => {
+    if (client.roomId === roomId) {
+      count++;
+    }
+  });
+
+  const message = JSON.stringify({
+    type: 'MEMBERS_COUNT',
+    payload: { count, roomId },
+  });
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN && client.roomId === roomId) {
+      client.send(message);
+    }
+  });
+};
+
 export const handleChat = (ws, wss, message) => {
   const { type, payload } = message;
 
   switch (type) {
     case 'JOIN_ROOM':
-      handleJoin(ws, payload);
+      handleJoin(ws, wss, payload);
+      break;
+    case 'LEAVE_ROOM':
+      handleLeave(ws, wss, payload);
       break;
     case 'SEND_MESSAGE':
       handleSendMessage(ws, wss, payload);
       break;
     case 'DELETE_MESSAGE':
       handleDeleteMessage(ws, wss, payload);
+      break;
     default:
       break;
   }
 };
 
-async function handleJoin(ws, { roomId, userName }) {
+async function handleJoin(ws, wss, { roomId, userName }) {
   ws.roomId = roomId;
   ws.userName = userName;
 
@@ -29,6 +58,14 @@ async function handleJoin(ws, { roomId, userName }) {
   });
 
   ws.send(JSON.stringify({ type: 'LOAD_HISTORY', payload: history }));
+
+  chatMembersCount(wss, roomId);
+}
+
+async function handleLeave(ws, wss, { roomId }) {
+  ws.roomId = null;
+
+  chatMembersCount(wss, roomId);
 }
 
 async function handleSendMessage(ws, wss, { roomId, text, author }) {
@@ -92,3 +129,9 @@ async function handleDeleteMessage(ws, wss, { id, roomId }) {
     );
   }
 }
+
+const broadcastViewerCount = (wss, roomId) => {
+  let count = 0;
+
+  wss.clients;
+};

@@ -1,4 +1,4 @@
-import { handleChat } from './chat.handler.js';
+import { chatMembersCount, handleChat } from './chat.handler.js';
 
 export const initWebSocket = (wss) => {
   wss.on('connection', (ws) => {
@@ -12,6 +12,11 @@ export const initWebSocket = (wss) => {
       }
     });
 
-    ws.on('close', () => console.log('User disconnected'));
+    ws.on('close', () => {
+      console.log('User disconnected');
+      if (ws.roomId) {
+        chatMembersCount(wss, ws.roomId);
+      }
+    });
   });
 };
