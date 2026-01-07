@@ -1,5 +1,4 @@
 import React from 'react';
-import { useRef } from 'react';
 import { useState } from 'react';
 import { roomsService } from '../services/roomsService';
 import { useEffect } from 'react';
@@ -8,7 +7,7 @@ export const RoomsContext = React.createContext();
 
 export const RoomsProvider = ({ children }) => {
   const [rooms, setRooms] = useState([]);
-  const socketRef = useRef(null);
+  const [socket, setSocket] = useState(null);
 
   const getRooms = async () => {
     const data = await roomsService.getAll();
@@ -16,8 +15,8 @@ export const RoomsProvider = ({ children }) => {
   };
 
   const sendMessage = (type, payload) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type, payload }));
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type, payload }));
     } else {
       console.warn('Error');
     }
@@ -26,11 +25,14 @@ export const RoomsProvider = ({ children }) => {
   useEffect(() => {
     getRooms();
 
-    socketRef.current = new WebSocket(import.meta.env.VITE_WS_URL);
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL);
 
-    socketRef.current.onopen = () => console.log('WS connected');
+    ws.onopen = () => {
+      console.log('WS connected');
+      setSocket(ws);
+    };
 
-    socketRef.current.onmessage = (event) => {
+    ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
       const { type, data } = message;
 
@@ -51,18 +53,21 @@ export const RoomsProvider = ({ children }) => {
       }
     };
 
-    socketRef.current.onclose = () => console.log('WS disconnected');
+    ws.onclose = () => {
+      console.log('WS disconnected');
+      setSocket(null);
+    };
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
+      if (ws) {
+        ws.close();
       }
     };
   }, []);
 
   const value = {
     rooms,
-    socket: socketRef.current,
+    socket,
     sendMessage,
   };
 

@@ -68,6 +68,10 @@ export const RoomPage = () => {
     };
   }, [roomId, socket, sendMessage, user]);
 
+  if (!currentRoom) {
+    return <h1>Loading room information</h1>;
+  }
+
   return (
     <div className={styles.roomPage}>
       <Header
